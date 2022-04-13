@@ -1,0 +1,164 @@
+body {
+  padding: 0px;
+  margin-top: 1080px;
+  margin-left: -10px;
+  font: 18px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+#content {
+  width: 500px;
+}
+#room {
+  background-color: #ddd;
+  margin-bottom: 1em;
+}
+#messages {
+  width: 250px;
+  height: 500px;
+  overflow: auto;
+  background-color: #F5F5DC;
+  margin-bottom: 1em;
+}
+#room-list {
+  float: right;
+  width: 100px;
+  height: 300px;
+  overflow: auto;
+}
+#room-list div {
+  border-bottom: 1px solid #eee;
+}
+#room-list div:hover {
+  background-color: #ddd;
+}
+#send-message {
+  width: 180px;
+  margin-bottom: 1em;
+}
+#help {
+  font: 10px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+#table1 tr {
+  height: 40px;
+}
+#table1 {
+  position: absolute;
+  top: 215px;
+  left: 830px;
+  border: 5px #77A88D groove;
+  display: none;
+}
+button {
+  margin: 0 0 5px 0;
+}
+.animated {
+  display: none;
+}
+
+/*about learning*/
+nav {
+    width: 34px;
+    display: inline-block;
+    float: right;
+  }
+nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+nav ul li {
+  position: relative;
+  display: inline-block;
+}
+nav ul li a {
+  height: 25px;
+  display: block;
+  color: #fff;
+  font-size: 14px;
+  text-decoration: none;
+  transition: 0.2s linear;
+}
+nav ul li a:hover { 
+  background: #27ae60;
+}
+nav ul li ul {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 89px;
+  border-bottom: 4px solid #2ecc71;
+}
+nav ul li ul li {
+  display: block;
+  width: 100%;
+  margin: 0;
+  text-align: left;
+}
+nav ul li ul li a {
+  display: block;
+  background: #2c3e50;
+  padding: 10px 15px;
+}
+nav ul li ul li a:first-child {
+  background: #2c3e50;
+  width: auto;
+  border-left: 4px solid transparent;
+  padding: 10px 10px;
+  font-size: 14px;
+}
+nav ul li ul li a:hover {
+  background: #34495e;
+  border-left: 4px solid #2ecc71;
+}
+.container {
+  display: inline-block;
+  cursor: pointer;
+}
+.bar1, .bar2, .bar3 {
+  width: 20px;
+  height: 3px;
+  background-color: #333;
+  margin: 4px 0;
+  transition: 0.4s;
+}
+.change .bar1 {
+  -webkit-transform: rotate(-45deg) translate(-5px, 4px);
+  transform: rotate(-45deg) translate(-5px, 4px);
+}
+.change .bar2 {
+  opacity: 0;
+}
+.change .bar3 {
+  -webkit-transform: rotate(45deg) translate(-5px, -6px);
+  transform: rotate(45deg) translate(-5px, -6px);
+}
+
+/* 學習歷程區塊(表格) */
+#learnDiv form{
+  width: 70%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 20px;
+}
+#learnDiv form input, button{
+  padding: 5px;
+}
+#learnDiv table{
+  width: 70%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 20px;
+  border-collapse: collapse;
+}
+#learnDiv table, th, td{
+  border: 1px solid #cdcdcd;
+}
+#learnDiv table th, table td{
+  padding: 10px;
+  text-align: left;
+}
+#learnDiv{
+  width: 1000px;
+}
+#learnDiv h1{
+  text-align: center;
+}

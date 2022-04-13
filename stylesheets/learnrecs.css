@@ -1,0 +1,29 @@
+form {
+    width: 70%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 20px;
+}
+form input, button {
+    padding: 5px;
+}
+#learnDiv table {
+    width: 70%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 20px;
+    border-collapse: collapse;
+}
+#learnDiv table, th, td {
+    border: 1px solid #cdcdcd;
+}
+#learnDiv table th, table td {
+    adding: 10px;
+    text-align: left;
+}
+#learnDiv {
+    width: 1000px;
+}
+#learnDiv h1 {
+    text-align: center;
+}

@@ -1,0 +1,57 @@
+
+#materialDiv h1{
+  text-align: center;
+  margin-top: 50px;
+}
+#materialDiv{
+  width: 1000px;
+  height: 700px;
+}
+#materialDiv02{
+  width: 1000px;
+}
+form input, button{
+    padding: 5px;
+}
+ #materialtable{
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+  /* padding:5px 0px;
+   padding-left: 50px; */
+ }
+ #material_span table{
+   /*margin-left: auto;
+   margin-right: auto;*/
+   width: 50%;
+ }
+#subject{
+  font-size:20px;
+  font-family: PMingLiU；
+}
+#upload_material_table_show_div_w{
+  margin-top: 50px;
+    text-align: center;
+}
+#upload_material_table_show_div{
+  margin-top: 30px;
+  margin-left: 100px;
+  margin-right: 50px;
+  width: 800px;
+}
+#delete_material_btn{
+  display: inline-block;
+}
+#upload_material_table{
+  margin-bottom: 50px;
+  width:600px;
+}
+#upload_material_table_show{
+    width:600px;
+}
+#upload_material_table_show_span{
+margin-top: 30px;
+}
+#materialDiv h2{
+  margin-top: 30px;
+}
