@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="oxxo.studio">
+    <meta name="copyright" content="oxxo.studio">
+    <link rel="stylesheet" type="text/css" href="googleapi.css">
+    <link rel="stylesheet" type="text/css" href="./p5/style.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/addons/p5.sound.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/6.10.3/sweetalert2.css" />
+    <!--引用jQuery-->
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" type="text/javascript"></script>
+    <!--引用SweetAlert2.js-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/6.10.3/sweetalert2.js" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <title>Document</title>
+
+    
+</head>
+<body>
+    <h4>識別的文字會顯示在下方:</h4>
+    <h1 id="show"></h1>
+
+    <script>
+        var mic;
+        var open;
+        var server = "https://192.168.0.100:8000"
+        socket = io.connect(server);
+        function startt(){
+            var show = document.getElementById('show');
+            var recognition = new webkitSpeechRecognition();
+
+            recognition.start();
+            recognition.continuous=false;
+            recognition.interimResults=false;
+            recognition.lang="cmn-Hant-TW";
+            
+            recognition.onresult=function(event){
+                mic.stop();
+                open = false;
+                var i = event.resultIndex;
+                var j = event.results[i].length-1;
+                show.innerHTML = event.results[i][j].transcript;
+                if(event.results[i][j].transcript == "打開"){
+                    swal("已開啟電燈", "room2電燈已開啟","success");
+                    socket.emit('iotcontrol',{"status1":1});
+                }
+                else if(event.results[i][j].transcript == "關閉"){
+                    swal("已開啟電燈", "room2電燈已開啟","success");
+                    socket.emit('iotcontrol',{"status1":0});
+                }
+            };
+            recognition.onend=function(){mic.stop();
+                open = false;}
+        }
+        function clearstring(){
+            show.innerHTML="";
+        }
+    </script>
+    <script src="./p5/voice.js"></script>
+</body>
+</html>

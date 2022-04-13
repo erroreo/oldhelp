@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@2/dist/socket.io.js"></script>
+    <meta charset="utf-8">
+    <title></title>
+    <style>
+      video {
+        object-fit: cover;
+      }
+      @media (min-width: 1000px) {
+        video {
+          height: 480px;
+          transform: scaleX(-1);
+        }
+      }
+  </style>
+  </head>
+  <body>
+    <div>
+      <video autoplay playsinline></video>
+      <button class="initialBtn">初始化</button>
+      <button class="joinBtn">join room</button>
+      <button class="btnCall">send offer</button>
+      <video width="200" height="200" autoplay
+        id="myVideo" muted playsinline></video>
+      <video width="500" height="500" autoplay
+        id="remoteVideo" playsinline></video>
+    </div>
+    <script src="webrtc.js"></script>
+    
+  </body>
+</html>

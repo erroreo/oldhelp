@@ -1,0 +1,38 @@
+.live{
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+.live img{
+    width: 100px;
+    height: 100px;
+    z-index: 0;
+}
+ @keyframes living {
+     0%{
+         transform: scale(1);
+         opacity: 0.5;  
+     }
+     50%{
+         transform: scale(1.5);  
+         opacity: 0;   /*圓形放大的同時，透明度逐漸減小為0*/
+     }
+     100%{
+         transform: scale(1);
+         opacity: 0.5;
+     }
+ }
+ .live span{
+     position: absolute;
+     width: 100px;
+     height: 100px;
+     left: 0;
+     bottom: 0;
+     background: #2222;
+     border-radius: 50%;
+     -webkit-animation: living 3s linear infinite;
+     z-index: -1;
+ }
+ .live span:nth-child(2){
+     -webkit-animation-delay: 1.5s; /*第二個span動畫延遲1.5秒*/
+ }

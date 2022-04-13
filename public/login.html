@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>登入頁面</title>
+	<script type="text/javascript" src="login.js"></script>
+	<title>Document</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body background="logback.jpg" width="500">
+<center>
+<h1>銀髮智安居<br>登入</h1>
+</center>
+
+
+<center>
+<div style="position: relative; width:500px; height: 89px;">
+
+<img src="sign.png" alt="">
+<span style="position: absolute; top: 200%; left: 25%;">
+	<form id="loginform" method="post" action="https://120.105.161.167/webrtc/public/login.php">
+		<img src="user.png" width="50px"><input type="text" id="username" name="username" style="font-size:30px" value="" size="8"><br><br><br>
+					  <input type="button" id="btn_login" value="LOG IN" onclick="login();" style="width:100px;height:40px;font-size:20px; background-color:#548C00; color:white">
+					</form>
+				</span>
+</div>
+
+<script src="login.js"></script>
+</body>
+</html>

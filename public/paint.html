@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/addons/p5.sound.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="p5/style.css">
+    <meta charset="utf-8" />
+    <script>
+
+      var SIGNALING_SERVER = "https://120.105.161.167:8000";
+      var signaling_socket = null;
+      var tmouseX,tmouseY,tpmouseX,tpmouseY;
+      var linee = [];
+
+      function init(){
+        signaling_socket = io(SIGNALING_SERVER);
+        
+      }
+	</script>
+ </head>
+ <body  onload='init()' background="draw.png">
+ <center>
+    <div id="buttonlist" class="control-ops">
+    <button type="button" class="btn btn-primary" onclick="draw:clearArea();return false;">清空畫板</button>
+    Line width : <select id="selWidth">
+        <option value="1">1</option>
+        <option value="3">3</option>
+        <option value="5">5</option>
+        <option value="7" selected="selected">7</option>
+        <option value="9">9</option>
+        <option value="11">11</option>
+    </select>
+    Color : <select id="selColor">
+        <option value="black">black</option>
+        <option value="blue" selected="selected">blue</option>
+        <option value="red">red</option>
+        <option value="green">green</option>
+        <option value="yellow">yellow</option>
+        <option value="gray">gray</option>
+    </select>
+    <script src="p5/sketch.js"></script>
+    <input type="file" id="file1" onchange="readURL(this)" Name="YouFile">
+    </div>
+    
+      <div id="canvas"></div>
+  
+
+    <script>
+      document.body.addEventListener('touchmove', function (e) {
+        e.preventDefault(); //阻止默认的处理方式(阻止下拉滑动的效果)
+      }, {passive: false}); //passive 参数不能省略，用来兼容ios和android
+    </script>
+    
+  </body>
+</html>

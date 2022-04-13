@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+</head>
+<body background="clockback.jpg">
+<center>
+<img src="clockold.png" height="200px"><br><br>
+    <button id="stopbutton" style="visibility:hidden" value="stop" onclick="stopalarm()">stop</button>
+    <audio id="myAudio">
+        <source src="1.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <table cellpadding="10" WIDTH="600" HEIGHT="100" BORDER="10" BORDERCOLOR="#DDDDDD">
+        <tbody id="tbody1">
+            <tr>
+                <td><font size="6" face="標楷體">
+                    提醒事項
+                </font></td>
+                <td><font size="6" face="標楷體">
+                    提醒時間
+                </font></td>
+                <td><font size="6" face="標楷體">
+                    提醒重複日
+                </font></td>
+            </tr>
+        </tbody>
+    </table>
+
+<script>
+    var sqlserver = "https://120.105.161.167:8000"
+    var sqlresult;
+    var out;
+    var myAudio = document.getElementById('myAudio');
+    var stopbutton = document.getElementById('stopbutton');
+    socket_sql = io.connect(sqlserver);
+    
+        function stopalarm(){
+            myAudio.pause();
+            stopbutton.style.visibility = 'hidden';
+            clearInterval(out);
+        }
+        
+        function seletsql(){
+            socket_sql.emit('sqlselct',{"login":0});
+            setTimeout(seletsql ,600000);
+        }
+        
+    
+        socket_sql.on('sqlreturn',function(data){
+            sqlresult = data.result;
+            var tableData="<tr>"
+            for(var i=0;i<sqlresult.length;i++){
+                tableData+="<td><font size='5' face='標楷體'>"+sqlresult[i].notificationName+"</font></td>"+"<td><font size='5' face='標楷體'>"+sqlresult[i].notificationTime+"</font></td>"+"<td><font size='5' face='標楷體'>"+sqlresult[i].day+"</font></td>";
+                tableData+="</tr>";
+            }
+            $("#tbody1").append(tableData)
+            console.log(data.result);
+        });
+        
+        seletsql();
+        askForNotificationPermission();
+        function justify_showMess(notification,myaudio){
+            if(window.Notification && Notification.permission !== "denied") {
+                myAudio.play();
+                        out = setInterval(function(){
+                                myAudio.play();
+                            },5000);
+                Notification.requestPermission(function(status) {
+                if (status === "granted") {
+                    var n = new Notification('收到通知', {
+                    body: notification,
+                });
+                } else{
+                    var n = new Notification("baby! i will leave you!");
+                }
+                });
+                alert("鬧鐘:"+notification);
+            }
+}
+        function askForNotificationPermission() {
+            Notification.requestPermission(function(status){
+                console.log('User Choice', status);
+                if (status !== 'granted') {
+                    console.log('推播允許被拒絕了!');
+                } else {
+                    displayNotification()
+                }
+            });
+        }
+
+        function displayNotification(){
+            var clock = setInterval(printword , 1000);
+        }
+        function printword(){
+            
+            for(i in sqlresult){
+                if(sqlresult[i].repeatday == '0'){
+                    var nowTime = new Date();
+                    var thatday = new Date(sqlresult[i].update_date);
+                    var year = thatday.getFullYear().toString();
+                    var month = (thatday.getMonth()+1).toString();
+                    var day = thatday.getDate().toString();
+                    var alrm = new Date(year+"-"+month+"-"+day+" "+sqlresult[i].notificationTime);
+                    console.log("現在時間"+nowTime);
+                    console.log("資料庫時間"+alrm);
+                    console.log("上傳時間"+thatday);
+                    if(thatday <= nowTime && alrm.getTime()-nowTime.getTime()<=1000 && alrm.getTime()-nowTime.getTime()>=0){
+                        //new Notification(sqlresult[i].notificationName);
+                        justify_showMess(sqlresult[i].notificationName,myAudio);
+                        
+                        stopbutton.style.visibility =  'visible';
+                    }
+                }
+                if(sqlresult[i].repeatday == '1'){
+                    var nowTime = new Date();
+                    var res = sqlresult[i].day.split(",");
+                    for(var x=0;x<res.length;x++){
+                        var alrm = new Date(nowTime.getFullYear().toString()+"-"+(nowTime.getMonth()+1).toString()+"-"+nowTime.getDate().toString()+" "+sqlresult[i].notificationTime);
+                        console.log("現在時間"+nowTime.getTime());
+                        console.log("資料庫時間"+alrm.getTime());
+
+                        if(nowTime.getDay().toString() == res[x] && alrm.getTime()-nowTime.getTime()<=1000 && alrm.getTime()-nowTime.getTime()>=0){
+                            //new Notification(sqlresult[i].notificationName);
+                            justify_showMess(sqlresult[i].notificationName,myAudio);
+                        
+                        }
+                        console.log("現在星期:"+nowTime.getDay());
+                        console.log("資料庫星期:"+res[x]);
+                    }
+                }
+            }
+            
+        }
+    </script>
+</body>
+</html>

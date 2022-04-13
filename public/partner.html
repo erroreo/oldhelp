@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<style>
+body {
+height: 2000px;
+}
+</style>
+<link rel="stylesheet" href="main.css" />
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+        <script type="text/javascript" src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.time.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.symbol.js"></script>
+        <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js" integrity="sha512-s+xg36jbIujB2S2VKfpGmlC3T5V2TF3lY48DX7u2r9XzGzgPsa6wTpOQA7J9iffvdeBN0q9tKzRxVxw1JviZPg==" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script>
+    	var SIGNALING_SERVER = "https://120.105.161.167:8000";  
+	    var USE_AUDIO = true;  
+	    var USE_VIDEO = true;  
+	    var DEFAULT_CHANNEL = 'some-global-channel-name-partner';  
+	    var MUTE_AUDIO_BY_DEFAULT = false;  
+	  
+	    var ICE_SERVERS = [  
+	        { url: "stun:stun.l.google.com:19302" }, {  
+	          url: "turn:120.105.161.167:3478",  
+	          credential: "0000",  
+	          username: "james"  
+	        }  
+	    ];  
+        var p5canvas;
+        var recognition;
+        var preposition;
+	    var signaling_socket = null; 
+        var local_media_stream = null; 
+        var local_media_close = [];
+	    var peers = {}; 
+        var peer_media_elements = {}; 
+        var track = [];
+        var count = 0;
+        
+
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="oxxo.studio">
+  <meta name="copyright" content="oxxo.studio">
+  <link rel="stylesheet" type="text/css" href="googleapi.css">
+  <link rel="stylesheet" type="text/css" href="./p5/style.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/addons/p5.sound.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/6.10.3/sweetalert2.css" />
+  <!--引用jQuery-->
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js" type="text/javascript"></script>
+  <!--引用SweetAlert2.js-->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/6.10.3/sweetalert2.js" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+  <script>
+      console.log("Connecting to signaling server");
+      signaling_socket = io(SIGNALING_SERVER);
+                
+                
+                //先取得網址字串，假設此頁網址為「index.aspx?id=U001&name=GQSM」
+                var url = location.href;
+                var id = "";
+                //再來用去尋找網址列中是否有資料傳遞(QueryString)
+                if(url.indexOf('?')!=-1)
+                {
+                    
+                    //在此直接將各自的參數資料切割放進ary中
+                    var ary = url.split('?')[1].split('&');
+                    //此時ary的內容為：
+                    //ary[0] = 'id=U001'，ary[1] = 'name=GQSM'
+                    
+                    //下迴圈去搜尋每個資料參數
+                    for(i=0;i<=ary.length-1;i++)
+                    {
+                        //如果資料名稱為id的話那就把他取出來
+                        if(ary[i].split('=')[0] == 'id')
+                            id = ary[i].split('=')[1];
+                    }
+                    
+                }
+                id = "partner";
+                function connect(){
+                    console.log("Connected to signaling server", this.id);
+                    if(id == "partner"){
+                      signaling_socket.emit('clientid',{id:"partner"});
+                      console.log('partner');
+                    }else{
+                      signaling_socket.emit('clientid',{id:"old"}); //測試
+                      console.log('old');
+                    }
+                    setup_local_media(function() {
+                        /* once the user has given us access to their
+                         * microphone/camcorder, join the channel and start peering up */
+                        join_chat_channel(DEFAULT_CHANNEL, {'whatever-you-want-here': 'stuff'});
+                    });
+                }
+
+                function disconnect(){
+                    console.log("Disconnected from signaling server");
+                    /* Tear down all of our peer connections and remove all the
+                     * media divs when we disconnect */
+                    for (peer_id in peer_media_elements) {
+                        peer_media_elements[peer_id].remove();
+                    }
+                    for (peer_id in peers) {
+                        peers[peer_id].close();
+                    }
+
+                    peers = {};
+                    peer_media_elements = {};
+                }
+                signaling_socket.on('disconnect', function() {
+                    console.log("Disconnected from signaling server");
+                    /* Tear down all of our peer connections and remove all the
+                     * media divs when we disconnect */
+                    for (peer_id in peer_media_elements) {
+                        peer_media_elements[peer_id].remove();
+                    }
+                    for (peer_id in peers) {
+                        peers[peer_id].close();
+                    }
+
+                    peers = {};
+                    peer_media_elements = {};
+                });
+
+                function join_chat_channel(channel, userdata) {
+                    signaling_socket.emit('join', {"channel": channel, "userdata": userdata});
+                }
+
+                function part_chat_channel(channel) {
+                    signaling_socket.emit('part', channel);
+                }
+
+                /**
+                * When we join a group, our signaling server will send out 'addPeer' events to each pair
+                * of users in the group (creating a fully-connected graph of users, ie if there are 6 people
+                * in the channel you will connect directly to the other 5, so there will be a total of 15
+                * connections in the network).
+                */
+
+                
+
+                var myCanvas, startX = 64, startY = 38, barHeight = 15;
+
+                var data = [], res = [], line_X = 0;
+                var now = new Date().getTime();
+                var updateInterval = 2000;
+                var totalPoints = 100;
+
+                var line_dataset = [
+                            { label: "attention", data:  res , color: "#00A6A6" }
+                        ];
+
+                signaling_socket.on('addPeer', function(config) {
+                    console.log('Signaling server said to add peer:', config);
+                    var peer_id = config.peer_id;
+                    if (peer_id in peers) {
+                        /* This could happen if the user joins multiple channels where the other peer is also in. */
+                        console.log("Already connected to peer ", peer_id);
+                        return;
+                    }
+                    var peer_connection = new RTCPeerConnection(
+                        {"iceServers": ICE_SERVERS},
+                        {"optional": [{"DtlsSrtpKeyAgreement": true}]} /* this will no longer be needed by chrome
+                                                                        * eventually (supposedly), but is necessary
+                                                                        * for now to get firefox to talk to chrome */
+                    );
+                    peers[peer_id] = peer_connection;
+
+                    peer_connection.onicecandidate = function(event) {
+                        if (event.candidate) {
+                            signaling_socket.emit('relayICECandidate', {
+                                'peer_id': peer_id,
+                                'ice_candidate': {
+                                    'sdpMLineIndex': event.candidate.sdpMLineIndex,
+                                    'candidate': event.candidate.candidate
+                                }
+                            });
+                        }
+                    }
+                    peer_connection.onaddstream = function(event) {
+                        console.log("onAddStream", event);
+                        var remote_media = USE_VIDEO ? $("<video>") : $("<audio>");
+                        remote_media.attr("autoplay", "autoplay");
+                        remote_media.attr("height", "100%");
+                        if (MUTE_AUDIO_BY_DEFAULT) {
+                            remote_media.attr("muted", "true");
+                        }
+                        // remote_media.attr("controls", "");
+                        peer_media_elements[peer_id] = remote_media;
+
+                        $('#hovertree').prepend(remote_media);
+                        attachMediaStream(remote_media[0], event.stream);
+                        if(config.teacherID == 1){
+
+                          var alert_container = $("<div>");
+                          alert_container.attr("id", "als"); alert_container.css({width: "240px", display: 'flex', 'justify-content': "space-around", 'margin-left': 'auto', 'margin-right': 'auto', 'background-color': '#E6E6FA', 'padding': '8px 0 7px 0'});
+                          var bow = $('<img>'); bow.attr({src: 'images/bow.png', class: 'icon'}); bow.css('opacity', 0.2);
+                          var distract = $('<img>'); distract.attr({src: 'images/distract.png', class: 'icon'}); distract.css('opacity', 0.2);
+                          alert_container.append(bow);
+                          alert_container.append(distract);
+                          $('#hovertree').append(alert_container);
+
+                          var record_container = $("<div>");
+                          record_container.attr("id", "rec"); record_container.css({'width': '240px', 'height': '230px', 'overflow': 'hidden'});
+                          
+                          record_container.append(emoBar); record_container.append(attLine);
+                          $('#hovertree').append(record_container);
+
+
+                          myCanvas = document.getElementById("myCanvas");
+
+            
+
+                        }else{ //學生
+                          
+                        }
+
+                    }
+
+                    /* Add our local stream */
+                    peer_connection.addStream(local_media_stream);
+
+                    /* Only one side of the peer connection should create the
+                     * offer, the signaling server picks one to be the offerer.
+                     * The other user will get a 'sessionDescription' event and will
+                     * create an offer, then send back an answer 'sessionDescription' to us
+                     */
+                    if (config.should_create_offer) {
+                        console.log("Creating RTC offer to ", peer_id);
+                        peer_connection.createOffer(
+                            function (local_description) {
+                                console.log("Local offer description is: ", local_description);
+                                peer_connection.setLocalDescription(local_description,
+                                    function() {
+                                        signaling_socket.emit('relaySessionDescription',
+                                            {'peer_id': peer_id, 'session_description': local_description});
+                                        console.log("Offer setLocalDescription succeeded");
+                                    },
+                                    function() { Alert("Offer setLocalDescription failed!"); }
+                                );
+                            },
+                            function (error) {
+                                console.log("Error sending offer: ", error);
+                            });
+                    }
+                });
+
+
+                /**
+                 * Peers exchange session descriptions which contains information
+                 * about their audio / video settings and that sort of stuff. First
+                 * the 'offerer' sends a description to the 'answerer' (with type
+                 * "offer"), then the answerer sends one back (with type "answer").
+                 */
+                signaling_socket.on('sessionDescription', function(config) {
+                    var peer_id = config.peer_id;
+                    var peer = peers[peer_id];
+                    var remote_description = config.session_description;
+                    var desc = new RTCSessionDescription(remote_description);
+                    var stuff = peer.setRemoteDescription(desc, function() {
+                            console.log("setRemoteDescription succeeded");
+                            if (remote_description.type == "offer") {
+                                console.log("Creating answer");
+                                peer.createAnswer(
+                                    function(local_description) {
+                                        peer.setLocalDescription(local_description, function() {
+                                                signaling_socket.emit('relaySessionDescription',
+                                                    {'peer_id': peer_id, 'session_description': local_description});
+                                                console.log("Answer setLocalDescription succeeded");
+                                            }, function() {
+                                              Alert("Answer setLocalDescription failed!");
+                                            });
+                                    },
+                                    function(error) {
+                                        console.log("Error creating answer: ", error);
+                                        console.log(peer);
+                                    });
+                            }
+                        },
+                        function(error) {
+                            console.log("setRemoteDescription error: ", error);
+                        });
+                });
+
+                /**
+                 * The offerer will send a number of ICE Candidate blobs to the answerer so they
+                 * can begin trying to find the best path to one another on the net.
+                 */
+                signaling_socket.on('iceCandidate', function(config) {
+                    var peer = peers[config.peer_id];
+                    var ice_candidate = config.ice_candidate;
+                    peer.addIceCandidate(new RTCIceCandidate(ice_candidate));
+                });
+
+                /**
+                 * When a user leaves a channel (or is disconnected from the
+                 * signaling server) everyone will recieve a 'removePeer' message
+                 * telling them to trash the media channels they have open for those
+                 * that peer. If it was this client that left a channel, they'll also
+                 * receive the removePeers. If this client was disconnected, they
+                 * wont receive removePeers, but rather the
+                 * signaling_socket.on('disconnect') code will kick in and tear down
+                 * all the peer sessions.
+                 */
+                signaling_socket.on('removePeer', function(config) {
+                    console.log('Signaling server said to remove peer:', config);
+                    var peer_id = config.peer_id;
+                    if (peer_id in peer_media_elements) {
+                        peer_media_elements[peer_id].remove();
+                    }
+                    if (peer_id in peers) {
+                        peers[peer_id].close();
+                    }
+                    delete peers[peer_id];
+                    delete peer_media_elements[config.peer_id];
+                });
+
+                signaling_socket.on('removePeerLocal', function(config) {
+                    console.log('Signaling server said to remove peer:', config);
+                    var peer_id = config.peer_id;
+                    if (peer_id in peers) {
+                        peers[peer_id].close();
+                    }
+                    delete peers[peer_id];
+                });
+
+
+              
+
+            /***********************/
+            /** Local media stuff **/
+            /***********************/
+            function setup_local_media(callback, errorback) {
+
+                attachMediaStream = function(element, stream) {
+                    console.log('DEPRECATED, attachMediaStream will soon be removed.');
+                    element.srcObject = stream;
+                 };
+
+                // if (local_media_stream != null) {  /* ie, if we've already been initialized */
+                //     if (callback) callback();
+                //     console.log("Access granted to audio/video");
+                //         var local_media = USE_VIDEO ? $("<video>") : $("<audio>");
+                //         local_media.attr("autoplay", "autoplay");
+                //         local_media.attr("muted", "true"); /* always mute ourselves by default */
+                //         local_media.attr("autoplay", "autoplay");
+                //         local_media.attr("height", "90%");
+                //         // local_media.attr("controls", "");
+                //         $('#hovertree').prepend(local_media);
+                //         local_media_close[count++] = local_media;
+                //         attachMediaStream(local_media[0], local_media_stream);
+                //     return;
+                // }
+                /* Ask user for permission to use the computers microphone and/or camera,
+                 * attach it to an <audio> or <video> tag if they give us access. */
+                console.log("Requesting access to local audio / video inputs");
+
+                navigator.getUserMedia = ( navigator.getUserMedia ||
+                       navigator.webkitGetUserMedia ||
+                       navigator.mozGetUserMedia ||
+                       navigator.msGetUserMedia);
+
+                
+
+                navigator.getUserMedia({"audio":USE_AUDIO, "video":USE_VIDEO},
+                    function(stream) { /* user accepted access to a/v */
+                        track[0] = stream.getTracks()[0];
+                        track[1] = stream.getTracks()[1]
+                        console.log("Access granted to audio/video");
+                        local_media_stream = stream;
+                        var local_media = USE_VIDEO ? $("<video>") : $("<audio>");
+                        local_media.attr("autoplay", "autoplay");
+                        local_media.attr("muted", "true"); /* always mute ourselves by default */
+                        local_media.attr("autoplay", "autoplay");
+                        local_media.attr("height", "50%");
+                        // local_media.attr("controls", "");
+                        $('#hovertree').append(local_media);
+                        local_media_close[count++] = local_media;
+                        attachMediaStream(local_media[0], stream);
+
+                        if (callback) callback();
+
+                        // var video = $("video").get(0);
+                        // setInterval(function() {
+                        //   var canvas = document.createElement("canvas");
+                        //   canvas.width = video.videoWidth;
+                        //   canvas.height = video.videoHeight;
+                        //   canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                        //   var dataURL = canvas.toDataURL();
+                        //   var base64 = dataURL.replace('data:image/png;base64,', '');
+                        //   if(base64 != "data:,"){
+                        //     signaling_socket.emit('facedetect', {
+                        //       buffer: base64
+                        //     });
+                        //   }
+                        // }, 5000);
+                    },
+                    function() { /* user denied access to a/v */
+                        console.log("Access denied for audio/video");
+                        alert("You chose not to provide access to the camera/microphone, demo will not work.");
+                        if (errorback) errorback();
+                    });
+            }
+          
+  </script>
+  <center><img src="logol.png" width="370" height="100"><br></center>
+</head>
+<body background="draw.png">
+<div id="hovertree" style="position:fixed;top:0px;left:0px;z-index:99;height:40%;width:100%;background-color:rgba(255, 255, 255, 0.452);display:none ;">
+</div>
+
+<div id="paint" style="position:fixed;top:0px;left:0px;z-index:99;height:60%;width:100%;background-color:rgba(255, 255, 255, 0.452);display:none ;text-align: center;">
+    
+      
+</div>
+<div id="page1" style="display: block;">
+</div>
+
+<script src="./p5/voice.js"></script>
+<script>
+    var hovertree = document.getElementById('hovertree');
+    var page1 = document.getElementById('page1');
+    var phoncallrepeat;
+    var checkphonecall=false;
+    signaling_socket.on('phonecall',function(){
+        if(!checkphonecall){
+            document.getElementById('phonecall').play();
+            phoncallrepeat = setInterval(function(){
+                document.getElementById('phonecall').play();
+                console.log("測試");
+            },5000);
+        }else{
+            document.getElementById('phonecall').pause();
+        }
+    });
+    function show(){
+        var doc = document.documentElement;
+        var top = (window.pageYOffset || doc.scrollTop)  - (doc.clientTop || 0);
+        if (hovertree.style.display === 'none') {
+            clearInterval(phoncallrepeat);
+            document.getElementById('phonecall').pause();
+            hovertree.style.display = 'block';
+            page1.style.display = 'none';
+            var highlights = document.getElementById("highlights");
+            preposition = highlights.style.top;
+            highlights.style.position = "relative";
+            highlights.style.top = window.innerHeight*0.4+"px";
+            var top1 = window.innerHeight*0.4 + document.getElementById("highlights").clientHeight+100;
+            console.log(top1);
+            p5canvas.position(0,top1);
+            checkphonecall = true;
+            connect();
+        } else {
+            var highlights = document.getElementById("highlights");
+            highlights.style.top = preposition;
+            var top =preposition + document.getElementById("highlights").clientHeight;
+            p5canvas.position(0,top);
+            hovertree.html = "";
+            hovertree.style.display = 'none';
+            page1.style.display = 'block';
+            for(var x = 0;x<count;x++)
+                local_media_close[x].remove();
+            track[0].stop();
+            track[1].stop();
+            peers = {};
+            part_chat_channel(DEFAULT_CHANNEL);
+            count=0;
+            checkphonecall = false;
+            disconnect();
+        }
+        
+    }
+    var paintdiv = document.getElementById('paint');
+    function showpaint(){
+        var doc = document.documentElement;
+        var top = (window.pageYOffset || doc.scrollTop)  - (doc.clientTop || 0);
+        var top2;
+        if (paintdiv.style.display === 'none') {
+            paintdiv.style.display = 'block';
+            var highlights = document.getElementById("highlights");
+            preposition = highlights.style.top;
+            highlights.style.position = "relative";
+            if(hovertree.style.display != 'none'){
+                paintdiv.style.top = window.innerHeight*0.4+"px";
+                highlights.style.top = window.innerHeight*0.9+"px";
+                top2 = window.innerHeight*0.9 + document.getElementById("highlights").clientHeight;
+            }else{
+                highlights.style.top = window.innerHeight*0.6+"px";
+                top2 = window.innerHeight*0.6 + document.getElementById("highlights").clientHeight;
+            }
+            page1.style.display = 'none';
+
+            p5canvas.position(0,top2);
+            var paint = $("<iframe>"); //動態叫出畫板
+                paint.attr("id","paintframe");
+                paint.attr("src","https://120.105.161.167:8000/paint");
+                paint.attr("width","100%");
+                paint.attr("height","90%");
+                paint.attr("scrolling","no");
+            $('#paint').prepend(paint);
+            var div = $("<div>");
+                div.attr("id","closepaintdiv");
+                div.attr("class","btn btn-close");
+                div.attr("onClick","showpaint()");
+            $('#paint').append(div);
+            var closebtn = $("<p>");
+                closebtn.attr("style","font-size:20px;font-weight:bold;");
+                closebtn.text("關閉互動畫板");
+            $('#closepaintdiv').append(closebtn);
+        
+        } else {
+            var highlights = document.getElementById("highlights");
+            highlights.style.top = preposition;
+            var top =preposition + document.getElementById("highlights").clientHeight;
+            p5canvas.position(0,top);
+            paintdiv.style.display = 'none';
+            paintdiv.innerHTML = "";
+            page1.style.display = 'block';
+            peers = {};
+        }
+        
+    }
+</script>
+<div id="highlights" class="highlights">
+    <section>
+        <div id="content" class="content1">
+            <header>
+                <img src="4.png"><br>
+                <!-- Hover #1 -->
+                
+                <div id="videocall" class="btn btn-one" onClick="show()">
+                    
+                    <span><p style="font-size:20px;font-weight:bold;">開啟視訊功能</p></span>
+                </div>
+                
+<!--                 
+                 Hover #2 
+                <div class="box-2">
+                <div class="btn btn-two">
+                    <span>HOVER ME</span>
+                </div>
+                </div>
+
+                 Hover #3 
+                <div class="box-3">
+                <div class="btn btn-three">
+                    <span>HOVER ME</span>
+                </div>
+                </div> -->
+            </header>
+        </div>
+    </section>
+    <section>
+        <div class="content2">
+            <header>
+                
+                <img src="3.png" WIDTH="150" HEIGHT="150"><br>
+                <div class="btn btn-one" onClick="showpaint()">
+                    <span><p style="font-size:20px;font-weight:bold;">開啟互動畫板</p></span>
+                </div>
+            </header>
+        </div>
+    </section>
+    <section>
+        <div class="content3">
+            <header>
+                <img src="6.png" WIDTH="150" HEIGHT="150"><br>
+            </header>
+            <div class="btn btn-one" onClick="location.href = 'http://120.105.161.167/webrtc/public/gmk/';">
+                <span><p style="font-size:20px;font-weight:bold;">進入五子棋</p></span>
+            </div>
+        </div>
+    </section>
+    <section>
+        <div class="content4">
+            <header>
+                <img src="5.png"><br>
+            </header>
+            
+                <div class="btn btn-one" onClick="openlight()">
+                    <span><p id="lights1" style="font-size:20px;font-weight:bold;">開啟電風扇</p></span>
+                </div>
+                <div class="btn btn-one" onClick="openfan()">
+                    <span><p id="fan" style="font-size:20px;font-weight:bold;">開啟客廳電燈</p></span>
+                </div>
+                <div class="btn btn-one" onClick="openlight2()">
+                    <span><p id="lights2" style="font-size:20px;font-weight:bold;">開啟臥室電燈</p></span>
+                </div>
+                <script type="text/javascript">
+                    var checkopen = checkopen2 = checkopen3 = 0;
+                    var nowstatus = nowstatus2 = nowstatus3 = "開啟";
+                    var pLights = document.getElementById('lights1');
+                    var pFan = document.getElementById('fan');
+                    var pLights2 = document.getElementById('lights2');
+                    function openlight(){
+                            //alert範例
+                            if(checkopen == 0){
+                                checkopen=1;
+                                swal("已開啟電風扇", "電風扇已開啟","success");
+                                nowstatus = "關閉電風扇";
+                                signaling_socket.emit('iotcontrol',{"status1":1,"status2":"null","status3":"null"});
+                            }else{
+                                checkopen=0;
+                                swal("已關閉電風扇", "電風扇已關閉","success");
+                                nowstatus = "開啟電風扇";
+                                signaling_socket.emit('iotcontrol',{"status1":0,"status2":"null","status3":"null"});
+                            }
+                            pLights.innerText = nowstatus;
+                    }
+                    function openfan(){
+                            //alert範例
+                            if(checkopen2 == 0){
+                                checkopen2=1;
+                                swal("已開啟電燈", "客廳電燈已開啟","success");
+                                nowstatus2 = "關閉客廳電燈";
+                                signaling_socket.emit('iotcontrol',{"status1":"null","status2":1,"status3":"null"});
+                            }else{
+                                checkopen2=0;
+                                swal("已關閉電燈", "客廳電燈已關閉","success");
+                                nowstatus2 = "開啟客廳電燈";
+                                signaling_socket.emit('iotcontrol',{"status1":"null","status2":0,"status3":"null"});
+                            }
+                            pFan.innerText = nowstatus2;
+                        }
+                        function openlight2(){
+                            //alert範例
+                            if(checkopen3 == 0){
+                                checkopen3=1;
+                                swal("已開啟臥室電燈", "臥室電燈已開啟","success");
+                                nowstatus3 = "關閉臥室電燈";
+                                signaling_socket.emit('iotcontrol',{"status1":"null","status2":"null","status3":1});
+                            }else{
+                                checkopen3=0;
+                                swal("已關閉臥室電燈", "臥室電燈已關閉","success");
+                                nowstatus3 = "開啟臥室電燈";
+                                signaling_socket.emit('iotcontrol',{"status1":"null","status2":"null","status3":0});
+                            }
+                            pLights2.innerText = nowstatus3;
+                        }
+                </script>
+                
+        </div>
+    </section>
+    <section>
+        <div class="content5">
+            <header>
+                <img src="2.png"><br>
+            </header>
+            <script>
+                var heartmean=[],countheartmean=0;
+                var hearttime=[];
+
+                signaling_socket.emit('heartinitialization',null); //初始化及時心跳
+                setInterval(function(){
+                    signaling_socket.emit('heartselect');
+                },1000);
+                signaling_socket.on('sqlreturnheart',function(heartdata){
+                    // document.getElementById('heartbeatshowup').innerHTML = "";
+                    // document.getElementById('heartveatmean').innerHTML = "";
+                    // if(countheartmean>10){
+                    //     // let sum = heartmean.reduce((previous, current) => current += previous);
+                    //     // let avg = sum / heartmean.length;
+                    //     // avg = avg.toFixed(1);
+                    //     //document.getElementById('heartveatmean').innerHTML = "<font size=\"6\" face=\"標楷體\" color=\"black\">"+avg+"</font>";
+                    // }else{
+                    //     //document.getElementById('heartveatmean').innerHTML = "<font size=\"6\" face=\"標楷體\" color=\"black\">--</font>";
+                    // }
+                    if(heartdata != "null"){
+                        document.getElementById('heartbeatshowup').innerHTML = "<font size=\"6\" face=\"標楷體\" color=\"black\">"+heartdata+"</font>";
+                        var d = new Date(); // for now
+                        heartmean[countheartmean]=parseInt(heartdata);
+                        hearttime[countheartmean++]=(d.getHours() +":"+ d.getMinutes() +":"+ d.getSeconds()).toString();
+                        console.log(hearttime);
+                        var data = {
+                            hearttime:[],
+                            heartmean:[]
+                        };
+                        for(var i = 0;i < hearttime.length;i++){
+                            data.hearttime.push(hearttime[i]);
+                            data.heartmean.push(heartmean[i]);
+                        }
+                        var ctx = document.getElementById('myChart').getContext('2d');
+                        var chart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                            labels: data.hearttime.map(x=>x.slice(0,10)),
+                            datasets: [{
+                                label: '心跳',
+                                data: data.heartmean.map(x=>x),
+                                // Line
+                                lineTension: 0,
+                                backgroundColor: '#FF5376',
+                                borderColor: '#FF5376',
+                                fill: false,
+                                borderWidth: 2,
+                                // Point
+                                pointRadius: 0,
+                                pointHoverRadius: 7,
+                            }]
+                            },
+                        });
+                            }else{
+                                document.getElementById('heartbeatshowup').innerHTML = "<font size=\"6\" face=\"標楷體\" color=\"black\">--</font>";
+                            }
+                            
+                        });
+            </script>
+            
+            <p><table cellpadding="10" WIDTH="100%" HEIGHT="100" BORDER="3" BORDERCOLOR="#3C3C3C">
+                <tbody id="tbody1">
+                    <tr>
+                        <td><img src="heartbeat.png" width="50" height="50"><font size="6" face="標楷體" color="black">
+                            心跳
+                        </font></td>
+                        <td id="heartbeatshowup"><font size="6" face="標楷體" color="black">--</font></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><canvas id='myChart'></canvas></td>
+                    </tr>
+                    <tr>
+                    <tr>
+
+                        <td COLSPAN=2 ALIGN=CENTER> <img src="heartlist.png" width="50" height="50"><input type="button" value="查看歷史紀錄" id="btn_haert" onclick="location.href='https://120.105.161.167/webrtc/public/heartlist.php'" style="width:200px;height:40px;font-size:20px; background-color:	#FF7744; color:white"></td>
+
+                    </tr>
+                </tbody>
+            </table></p>
+        </div>
+    </section>
+    <section>
+        <div class="content">
+            <header>
+                <img src="1.png"><br>
+                <audio id="myAudio">
+                    <source src="1.mp3" type="audio/mpeg">
+                </audio>
+                <audio id="phonecall">
+                    <source src="phone_ring_ring.mp3" type="audio/mpeg">
+                </audio>
+                <p><table id="notificationTable" style="margin: 0 auto;" cellpadding="10" BORDER="3" BORDERCOLOR="#3C3C3C" class="table-responsive">
+                    <tbody id="tbody2">
+                        <tr>
+                            <td align="center"><font size="5" face="標楷體">
+                                提醒事項
+                            </font></td>
+                            <td align="center"><font size="5" face="標楷體">
+                                提醒時間
+                            </font></td>
+                            <td align="center"><font size="5" face="標楷體">
+                                提醒重複日
+                            </font></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </p>
+                <script>
+                    var sqlresult;
+                    var out;
+                    var myAudio = document.getElementById('myAudio');
+                    var stopbutton = document.getElementById('stopbutton');
+                    
+                        function stopalarm(){
+                            myAudio.pause();
+                            stopbutton.style.visibility = 'hidden';
+                            clearInterval(out);
+                        }
+                        
+                        function seletsql(){
+                            signaling_socket.emit('sqlselct',{"login":1});
+                            setTimeout(seletsql ,10000);
+                        }
+                        
+                    
+                        signaling_socket.on('sqlreturn',function(data){
+                            $("#tbody2").empty();
+                            sqlresult = data.result;
+                            var tableData="<tr><td align='center'><font size='5' face='標楷體'>提醒事項</font></td><td align='center'><font size='5' face='標楷體'>    提醒時間</font></td><td align='center'><font size='5' face='標楷體'>    提醒重複日</font></td></tr><tr>";
+                            for(var i=0;i<sqlresult.length;i++){
+                                tableData+="<td><font size='4' face='標楷體'>"+sqlresult[i].notificationName+"</font></td>"+"<td><font size='4' face='標楷體'>"+sqlresult[i].notificationTime+"</font></td>"+"<td><font size='5' face='標楷體'>"+sqlresult[i].day+"</font></td>";
+                                tableData+="</tr>";
+                            }
+                            $("#tbody2").append(tableData);
+                            //console.log(data.result);
+                        });
+                        
+                        seletsql();
+                        function valueToServer(){
+                            const notificationElement = document.getElementById("notification");
+                            const notification = notificationElement.value;
+                            const days = document.getElementsByName("days");
+                            const day = [];
+                            for(i in days){
+                                if(days[i].checked)
+                                    day.push(days[i].value);
+                            }
+                            const timeElement = document.getElementById("appt");
+                            const time = timeElement.value;
+                            signaling_socket.emit('sqlInput',{"notification":notification , "time":time , "days":day});
+                            alert("提醒事項:" + notification + "\n提醒時間:" + "  " + time+"重複星期:"+ day);
+                        }
+                        // askForNotificationPermission();
+                        // function justify_showMess(notification,myaudio){
+                        //     if(window.Notification && Notification.permission !== "denied") {
+                        //         myAudio.play();
+                        //                 out = setInterval(function(){
+                        //                         myAudio.play();
+                        //                     },5000);
+                        //         Notification.requestPermission(function(status) {
+                        //         if (status === "granted") {
+                        //             var n = new Notification('收到通知', {
+                        //             body: notification,
+                        //         });
+                        //         } else{
+                        //             var n = new Notification("baby! i will leave you!");
+                        //         }
+                        //         });
+                        //         alert("鬧鐘:"+notification,function(){out.pause();});
+                        //     }
+                
+                        function askForNotificationPermission() {
+                            Notification.requestPermission(function(status){
+                                //console.log('User Choice', status);
+                                if (status !== 'granted') {
+                                    console.log('推播允許被拒絕了!');
+                                } else {
+                                    displayNotification()
+                                }
+                            });
+                        }
+                
+                        function displayNotification(){
+                            var clock = setInterval(printword , 1000);
+                        }
+                        function printword(){
+                            
+                            for(i in sqlresult){
+                                if(sqlresult[i].repeatday == '0'){
+                                    var nowTime = new Date();
+                                    var thatday = new Date(sqlresult[i].update_date);
+                                    var year = thatday.getFullYear().toString();
+                                    var month = (thatday.getMonth()+1).toString();
+                                    var day = thatday.getDate().toString();
+                                    var alrm = new Date(year+"-"+month+"-"+day+" "+sqlresult[i].notificationTime);
+                                    //console.log("現在時間"+nowTime);
+                                    //console.log("資料庫時間"+alrm);
+                                    //console.log("上傳時間"+thatday);
+                                    if(thatday <= nowTime && alrm.getTime()-nowTime.getTime()<=1000 && alrm.getTime()-nowTime.getTime()>=0){
+                                        //new Notification(sqlresult[i].notificationName);
+                                        //justify_showMess(sqlresult[i].notificationName,myAudio);
+                                        
+                                        //stopbutton.style.visibility =  'visible';
+                                    }
+                                }
+                                if(sqlresult[i].repeatday == '1'){
+                                    var nowTime = new Date();
+                                    var res = sqlresult[i].day.split(",");
+                                    for(var x=0;x<res.length;x++){
+                                        var alrm = new Date(nowTime.getFullYear().toString()+"-"+(nowTime.getMonth()+1).toString()+"-"+nowTime.getDate().toString()+" "+sqlresult[i].notificationTime);
+                                        //console.log("現在時間"+nowTime.getTime());
+                                        //console.log("資料庫時間"+alrm.getTime());
+                
+                                        if(nowTime.getDay().toString() == res[x] && alrm.getTime()-nowTime.getTime()<=1000 && alrm.getTime()-nowTime.getTime()>=0){
+                                            //new Notification(sqlresult[i].notificationName);
+                                            //justify_showMess(sqlresult[i].notificationName,myAudio);
+                                        
+                                        }
+                                        //console.log("現在星期:"+nowTime.getDay());
+                                        //console.log("資料庫星期:"+res[x]);
+                                    }
+                                }
+                            }
+                            
+                        }
+                    </script>
+                <form class="form-horizontal" method="POST" id="form1" style="display: none;" onsubmit="valueToServer();return false;">
+                    <fieldset>
+                    
+                    <!-- Form Name -->
+                    
+                    
+                    <!-- Text input-->
+                    <div class="form-group">
+                      <label class="col-md-4 control-label" for="notification">提醒事項:</label>  
+                      <div class="col-md-4">
+                      <input id="notification" name="notification" type="text" placeholder="ex:記得吃藥喔!" class="form-control input-md" required="">
+                        
+                      </div>
+                    </div>
+                    
+                    <!-- Text input-->
+                    <div class="form-group">
+                      <label class="col-md-4 control-label" for="appt">提醒時間:</label>  
+                      <div class="col-md-4">
+                      <input id="appt" type="time" name="appt" type="text" placeholder="ex:下午 12:49" class="form-control input-md" required="">
+                        
+                      </div>
+                    </div>
+                    
+                    <!-- Multiple Checkboxes (inline) -->
+                    <div class="form-group">
+                      <label class="col-md-4 control-label" for="days">重複日:</label>
+                      <div class="col-md-4">
+                        <label class="checkbox-inline" for="days-0">
+                          <input type="checkbox" name="days" id="days-0" value="1">
+                          星期一
+                        </label>
+                        <label class="checkbox-inline" for="days-1">
+                          <input type="checkbox" name="days" id="days-1" value="2">
+                          星期二
+                        </label>
+                        <label class="checkbox-inline" for="days-2">
+                          <input type="checkbox" name="days" id="days-2" value="3">
+                          星期三
+                        </label>
+                        <label class="checkbox-inline" for="days-3">
+                          <input type="checkbox" name="days" id="days-3" value="4">
+                          星期四
+                        </label>
+                        <label class="checkbox-inline" for="days-4">
+                          <input type="checkbox" name="days" id="days-4" value="5">
+                          星期五
+                        </label>
+                        <label class="checkbox-inline" for="days-5">
+                          <input type="checkbox" name="days" id="days-5" value="6">
+                          星期六
+                        </label>
+                        <label class="checkbox-inline" for="days-6">
+                          <input type="checkbox" name="days" id="days-6" value="7">
+                          星期日
+                        </label>
+                      </div>
+                    </div>
+                    
+                    <!-- Button -->
+                    <div class="form-group">
+                      <label class="col-md-4 control-label" for="submit"></label>
+                      <div class="col-md-4">
+                        <button id="submit" type="submit" name="submit" class="btn btn-success">送出</button>
+                      </div>
+                    </div>
+                    
+                    </fieldset>
+                    </form>
+            
+                
+                <a class="myButton" onclick="showNotification()">新增提醒</a>
+                <script>
+                    function showNotification(){
+                        var form1 = document.getElementById('form1');
+                        var notificationTable = document.getElementById('notificationTable');
+
+                        if(form1.style.display === 'none'){
+                            form1.style.display = 'block';
+                        }else{
+                            form1.style.display = 'none';
+                        }
+                    }
+                </script>
+        </div>
+    </section>
+        
+    <script>
+        var mic;
+        var open;
+        function startt(){
+            recognition = new webkitSpeechRecognition();
+
+            recognition.start();
+            recognition.continuous=false;
+            recognition.interimResults=false;
+            recognition.lang="cmn-Hant-TW";
+            
+            recognition.onresult=function(event){
+                mic.stop();
+                open = false;
+                var i = event.resultIndex;
+                var j = event.results[i].length-1;
+                if(event.results[i][j].transcript == "打開客廳電燈"){
+                    swal("已開啟電燈", "客廳電燈已開啟","success");
+                    signaling_socket.emit('iotcontrol',{"status1":"null","status2":1,"status3":"null"});
+                }
+                else if(event.results[i][j].transcript == "關閉客廳電燈"){
+                    swal("已關閉電燈", "客廳電燈已關閉","success");
+                    signaling_socket.emit('iotcontrol',{"status1":"null","status2":0,"status3":"null"});
+                }
+                else if(event.results[i][j].transcript == "打開電風扇"){
+                    swal("已開啟電風扇", "電風扇已開啟","success");
+                    signaling_socket.emit('iotcontrol',{"status1":1,"status2":"null","status3":"null"});
+                }
+                else if(event.results[i][j].transcript == "關閉電風扇"){
+                    swal("已關閉電風扇", "電風扇已關閉","success");
+                    signaling_socket.emit('iotcontrol',{"status1":0,"status2":"null","status3":"null"});
+                }
+                else if(event.results[i][j].transcript == "打開臥室電燈"){
+                    swal("已開啟臥室電燈", "臥室電燈已開啟","success");
+                    signaling_socket.emit('iotcontrol',{"status1":"null","status2":"null","status3":1});
+                }
+                else if(event.results[i][j].transcript == "關閉臥室電燈"){
+                    swal("已關閉臥室電燈", "臥室電燈已關閉","success");
+                    signaling_socket.emit('iotcontrol',{"status1":"null","status2":"null","status3":0});
+                }
+                else if(event.results[i][j].transcript == "打開視訊"){
+                    $('#videocall').click();
+                }
+                else if(event.results[i][j].transcript == "打開視訊功能"){
+                    $('#videocall').click();
+                }
+                else if(event.results[i][j].transcript == "關閉視訊"){
+                    $('#videocall').click();
+                }
+                else if(event.results[i][j].transcript == "關閉視訊功能"){
+                    $('#videocall').click();
+                }
+                else if(event.results[i][j].transcript == "打開互動畫板"){
+                    showpaint();
+                }
+                else if(event.results[i][j].transcript == "打開畫板"){
+                    showpaint();
+                }
+                else{
+                    swal("已開啟電燈", "客廳電燈已開啟","success");
+                    signaling_socket.emit('iotcontrol',{"status1":"null","status2":1,"status3":"null"});
+                }
+            };
+            recognition.onend=function(){mic.stop();open = false;}
+        }
+
+    </script>
+        <div id="canvas"></div>
+</div>
+
+</body>
+</html>

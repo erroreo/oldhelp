@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    
+<span class="result"></span>
+<script>
+    const config = {
+        url: 'https://cors-anywhere.herokuapp.com/https://dialogflow.googleapis.com/v2/projects/oldhelpchatbot-mtu9/agent/sessions/12345687:detectIntent',
+        method: 'post',
+        headers: {
+            "Authorization": "Bearer ya29.c.Kp0B5gcXkX0-SEbXcQzh2yGnyjdsCnMchJSLjHjDG0DY6qTh4rq1qeViaSxQnKWOmk9i-KX9-V8sUz0v4_UJRMdtebWp3jmIKStaJ4Zjlv2XSQZ-W0bmv65s94lWK7NkxQKYQ4umHF1ePULwp_mO-SQX1TqxYV0f7I8fhxkfSXXFOBDujOKKgxbNkcF3yvla7HBcjLcOOfbsFmDOy-3hQA",
+          "ContentType": "application/json; charset=utf-8"
+        },
+        data:{
+            "queryInput": {
+                "text": {
+                "text": "你好",
+                "languageCode": "zh-TW"
+                }
+            }
+        },
+        responseType: 'json',
+    }
+    axios.request(config).then(res => console.log(res.data)).catch(error => console.log(error));
+
+</script>
+
+</body>
+</html>

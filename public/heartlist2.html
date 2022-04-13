@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+</head>
+<body background="heartback.jpg">
+<center>
+<img src="heartp.png" height="200px"><br><br>
+    <button id="stopbutton" style="visibility:hidden" value="stop" onclick="stopalarm()">stop</button>
+    <audio id="myAudio">
+        <source src="1.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+    <table cellpadding="10" WIDTH="600" HEIGHT="100" BORDER="10" BORDERCOLOR="#FFB7DD">
+        <tbody id="tbody1">
+            <tr>
+                <td><font size="6" face="標楷體" color="white">
+                    心跳
+                </font></td>
+				<td><font size="6" face="標楷體" color="white">
+					日期
+                </font></td>
+			</tr>
+        </tbody>
+    </table>
+</body>
+</html>

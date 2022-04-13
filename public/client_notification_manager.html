@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+</head>
+<body background="clockback.jpg">
+<center>
+<img src="clockp.png" height="200px"><br><br>
+
+    <form class="form-horizontal" action="#" method="POST" id="form1" onsubmit="valueToServer()">
+        <fieldset>
+        
+        <!-- Form Name -->
+        <legend>新增提醒事項</legend>
+        
+        <!-- Text input-->
+        <div class="form-group">
+          <label class="col-md-4 control-label" for="notification">提醒事項:</label>  
+          <div class="col-md-4">
+          <input id="notification" name="notification" type="text" placeholder="ex:記得吃藥喔!" class="form-control input-md" required="">
+            
+          </div>
+        </div>
+        
+        <!-- Text input-->
+        <div class="form-group">
+          <label class="col-md-4 control-label" for="appt">提醒時間:</label>  
+          <div class="col-md-4">
+          <input id="appt" type="time" name="appt" type="text" placeholder="ex:下午 12:49" class="form-control input-md" required="">
+            
+          </div>
+        </div>
+        
+        <!-- Multiple Checkboxes (inline) -->
+        <div class="form-group">
+          <label class="col-md-4 control-label" for="days">重複日:</label>
+          <div class="col-md-4">
+            <label class="checkbox-inline" for="days-0">
+              <input type="checkbox" name="days" id="days-0" value="1">
+              星期一
+            </label>
+            <label class="checkbox-inline" for="days-1">
+              <input type="checkbox" name="days" id="days-1" value="2">
+              星期二
+            </label>
+            <label class="checkbox-inline" for="days-2">
+              <input type="checkbox" name="days" id="days-2" value="3">
+              星期三
+            </label>
+            <label class="checkbox-inline" for="days-3">
+              <input type="checkbox" name="days" id="days-3" value="4">
+              星期四
+            </label>
+            <label class="checkbox-inline" for="days-4">
+              <input type="checkbox" name="days" id="days-4" value="5">
+              星期五
+            </label>
+            <label class="checkbox-inline" for="days-5">
+              <input type="checkbox" name="days" id="days-5" value="6">
+              星期六
+            </label>
+            <label class="checkbox-inline" for="days-6">
+              <input type="checkbox" name="days" id="days-6" value="7">
+              星期日
+            </label>
+          </div>
+        </div>
+        
+        <!-- Button -->
+        <div class="form-group">
+          <label class="col-md-4 control-label" for="submit"></label>
+          <div class="col-md-4">
+            <button id="submit" type="submit" name="submit" class="btn btn-success">送出</button>
+          </div>
+        </div>
+        
+        </fieldset>
+        </form>
+    <script>
+        var sqlserver = "https://120.105.161.167:8000"
+        socket_sql = io.connect(sqlserver);
+        function seletsql(){
+            socket_sql.emit('sqlselct',{"login":1});
+            setTimeout(seletsql , 10000);
+        }
+        socket_sql.on('sqlreturn',function(data){
+            console.log(data.result);
+        });
+        seletsql();
+        function valueToServer(){
+            const notificationElement = document.getElementById("notification");
+            const notification = notificationElement.value;
+            const days = document.getElementsByName("days");
+            const day = [];
+            for(i in days){
+                if(days[i].checked)
+                    day.push(days[i].value);
+            }
+            const timeElement = document.getElementById("appt");
+            const time = timeElement.value;
+            socket_sql.emit('sqlInput',{"notification":notification , "time":time , "days":day});
+            alert("提醒事項:" + notification + "\n提醒時間:" + "  " + time+"重複星期:"+ day);
+        }
+    </script>
+</body>
+</html>
